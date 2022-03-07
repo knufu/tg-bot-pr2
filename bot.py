@@ -1,9 +1,11 @@
 import requests
 import datetime
 from config import bot_token, open_weather_token
-from aiogram import Bot,types
+from aiogram import Bot,types, executor
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
+import os
+from aiogram.dispatcher.filters import Text
 
 
 bot = Bot(token=bot_token)
@@ -11,10 +13,21 @@ dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['start'])
 async def start_command(message: types.Message):
-    await message.reply("Wassup, напиши название города и я тебе скажу точный прогноз погоды")
+    start_buttons = ['🌥 Погода']
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add(*start_buttons)
+    await message.answer('Выберите кнопку', reply_markup=keyboard)
+
+    #await message.reply("Wassup, напиши название города и я тебе скажу точный прогноз погоды")
+
+@dp.message_handler(Text(equals='🌥 Погода'))
+async def wait_weather(message: types.Message):
+    await message.reply('напишите город, в котором хотели бы узнать прогноз погоды: ') 
+    get_weather()
 
 @dp.message_handler()
 async def get_weather(message: types.Message):
+    
     try:
         r = requests.get(
             f'http://api.openweathermap.org/data/2.5/weather?q={message.text}&appid={open_weather_token}&units=metric'
