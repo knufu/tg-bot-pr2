@@ -1,3 +1,4 @@
+from email import message
 import requests
 import datetime
 from config import bot_token, open_weather_token
@@ -6,6 +7,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 import os
 from aiogram.dispatcher.filters import Text
+import json
 
 
 bot = Bot(token=bot_token)
@@ -13,14 +15,27 @@ dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['start'])
 async def start_command(message: types.Message):
-    start_buttons = ['🌥 Погода']
+    start_buttons = ['🌥Погода', '🌍Новости']
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.add(*start_buttons)
     await message.answer('Выберите кнопку', reply_markup=keyboard)
 
     #await message.reply("Wassup, напиши название города и я тебе скажу точный прогноз погоды")
 
-@dp.message_handler(Text(equals='🌥 Погода'))
+@dp.message_handler(Text(equals='🌍Новости'))
+async def news(message:types.Message):
+    with open("news_dict.json") as file:
+        news_dict = json.load(file)
+    
+    for i, k in sorted(news_dict.items()):
+        news = f"{datetime.datetime.fromtimestamp(k['article_date_timestamp'])}\n" \
+                f"{k['article_title']}\n" \
+                f"{k['article_desc']}\n" \
+                f"{k['article_url']}"
+        await message.answer(news)
+
+
+@dp.message_handler(Text(equals='🌥Погода'))
 async def wait_weather(message: types.Message):
     await message.reply('напишите город, в котором хотели бы узнать прогноз погоды: ') 
     get_weather()
@@ -53,6 +68,7 @@ async def get_weather(message: types.Message):
     except:
           
         await message.reply('Проверьте ввод города')
+        
 
 
 if __name__ == '__main__':
